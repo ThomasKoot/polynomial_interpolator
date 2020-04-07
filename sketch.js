@@ -24,7 +24,7 @@ function setup() {
 
   	stroke(0);
 	strokeWeight(3);
-	fill(250);
+	fill(240);
 	
 }
 
