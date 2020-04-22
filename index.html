@@ -6,13 +6,194 @@
 <script src="p5.js"></script>
 <script src="p5.sound.js"></script>
 <script src="sketch.js"></script>
+
+<style>
+body {
+  background-image: radial-gradient(black, white);
+
+}
+
+h1 {
+  color: maroon;
+  margin-left: 40px;
+} 
+
+
+p {
+  text-align: center;
+  font-weight: bold;
+  font-size: 20px;
+
+}
+
+.button_class {
+  background: white;
+  border-style: solid;
+  border-width: 5px;
+  border-color: #AE0000;
+  color: #AE0000;
+  border-radius: 50%;
+  width: 75px;
+  height: 75px;
+  padding: 10px
+  text-align: center;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+#slider-div{
+  margin: auto; 
+  width: 500px;
+}
+
+
+input[type=range] {
+  text-align: center;
+  height: 29px;
+  -webkit-appearance: none;
+  margin: auto;
+  margin-top: 20px;
+  width: 500px;
+  background: rgba(1,1,1, 0);
+}
+input[type=range]:focus {
+  outline: none;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 20px;
+  cursor: pointer;
+  animate: 0.2s;
+  background: #FFFFFF;
+  border-radius: 5px;
+  border: 1px solid #D3D3D3;
+}
+input[type=range]::-webkit-slider-thumb {
+
+  border: 1px solid #000000;
+  height: 40px;
+  width: 40px;
+  border-radius: 20px;
+  background: #AE0000;
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -10px;
+}
+input[type=range]:focus::-webkit-slider-runnable-track {
+  background: #37A925;
+}
+input[type=range]::-moz-range-track {
+  width: 100%;
+  height: 10px;
+  cursor: pointer;
+  animate: 0.2s;
+  box-shadow: 1px 1px 1px #000000;
+  background: #37A925;
+  border-radius: 5px;
+  border: 1px solid #000000;
+}
+input[type=range]::-moz-range-thumb {
+  box-shadow: 1px 1px 1px #000000;
+  border: 2px solid #000000;
+  height: 20px;
+  width: 23px;
+  border-radius: 7px;
+  background: #FFFFFF;
+  cursor: pointer;
+}
+input[type=range]::-ms-track {
+  width: 100%;
+  height: 10px;
+  cursor: pointer;
+  animate: 0.2s;
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+input[type=range]::-ms-fill-lower {
+  background: #37A925;
+  border: 1px solid #000000;
+  border-radius: 10px;
+  box-shadow: 1px 1px 1px #000000;
+}
+input[type=range]::-ms-fill-upper {
+  background: #37A925;
+  border: 1px solid #000000;
+  border-radius: 10px;
+  box-shadow: 1px 1px 1px #000000;
+}
+input[type=range]::-ms-thumb {
+  margin-top: 1px;
+  box-shadow: 1px 1px 1px #000000;
+  border: 2px solid #000000;
+  height: 20px;
+  width: 23px;
+  border-radius: 7px;
+  background: #FFFFFF;
+  cursor: pointer;
+}
+input[type=range]:focus::-ms-fill-lower {
+  background: #37A925;
+}
+input[type=range]:focus::-ms-fill-upper {
+  background: #37A925;
+}
+
+#container {
+  width:100%;
+  display: flex;
+
+}
+
+#reset-div {
+  width: 10%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+
+}
+
+#generate-div {
+  width: 10%;
+  display: flex;
+  align-items: center;
+  justify-content: center; 
+
+
+}
+
+#sketch-div{
+  border-style: solid;
+  border-width: 10px;
+  border-color: #AE0000;
+  border-radius: 15px;
+  margin: auto; 
+  width: 500px;
+  height: 500px;
+  box-shadow: 10px 10px 8px #888888;
+}
+
+#dummy-div{
+  width: 10%;
+}
+
+
+</style>
+
 </head>
 <body>
+<h1 style="text-align:center;">Polynomen-generator</h1>
 
-<h1 style="text-align:center;">Polynomial interpolator</h1>
 
-<hr>
-
+<div id="container">
+  <div id="dummy-div"></div>
+  <div id="reset-div"></div>
+  <div id="sketch-div"></div> 
+  <div id="generate-div"></div>
+  <div id="dummy-div"></div>
+</div>
+<div id="slider-div"></div>
 
 </body>
 </html>

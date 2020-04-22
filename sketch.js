@@ -4,86 +4,153 @@ var range;
 var reset;
 var p;
 var a = [];
+var interpolated = false;
+var dragged_point = -1;
+var timestamp = 0;
 
 
 function setup() {
 
-	generate = createButton("generate");		//an interpolation buttin
-	range = createSlider(1, 20, 10, 0);			//range slider
+	//Setup of the canvas and the buttons. Frame is an off-screen buffer that contains the axes, the graph and the points.
+	//The real canvas only displays the text when you hoover over the points. This is done to prevent the computer from performing
+	//all the calculations continously at framerate. 
+
+	generate = createButton("generate");		
+	range = createSlider(1, 10, 1, 0);			
 	canvas = createCanvas(500, 500);
-  	p = createP("");							//p to hold the function definition
-  	reset = createButton('reset');
+	reset = createButton('reset');
+	reset.parent('reset-div')
+	canvas.parent('sketch-div');
+  	p = createP("");							
   	
-  	background(250);
-  	drawAxes();
+  	frame = createGraphics(width, height);		
+  	frame.clear();
+
+  	range.parent('slider-div');
   	
-  	canvas.mousePressed(append_point);
+
+
+  	canvas.mousePressed(update_points);
+  	canvas.mouseReleased(undo_drag);
   	generate.mousePressed(interpolate);
   	range.input(update_canvas);
   	reset.mousePressed(initialize);
 
-  	stroke(0);
-	strokeWeight(3);
-	fill(240);
-	
+  	generate.parent('generate-div')
+  	generate.class('button_class')
+  	reset.class('button_class')
+
+
+
+
+	initialize();
+
 }
 
 function draw() {
+	background(255);
+	image(frame, 0, 0)
+	check_points();
+}
 
+function update_points() {
+	//checks if the mouse is clicked on an existing point, if so, the index of that point is allocated to dragged_point
+	//if the mouse clicks on an empty spot, that point is appended to points.
+	removing = false;
 
+	if (frameCount - timestamp < 12) {
+		removing = true;
+	}
+	timestamp = frameCount;
+
+	mouse = new p5.Vector(mouseX, mouseY);
+	for (var i = 0; i<points.length; i++) {
+		mapped_point = new p5.Vector(mapX(points[i].x), mapY(points[i].y));
+		if (mouse.dist(mapped_point) < 8) {
+			dragged_point = i
+		}
+	}
+	if (dragged_point < 0 && removing == false) {
+		append_point();
+	} else if (dragged_point >= 0 && removing == true) {
+		points.splice(dragged_point, 1);
+		interpolate();
+		update_canvas();
+		undo_drag();
+	}
+}
+
+function undo_drag() {
+	dragged_point = -1;
 }
 
 function append_point() {
+	//maps the x and y location of the mouse to the range and appends a new vector with this x and y to the points array.
+	//if the points are already interpolated, the interpolation is updated
+
 	var x = map(mouseX, 0, width, -range.value(), range.value());
 	var y = map(mouseY, height, 0, -range.value(), range.value());
-	stroke(0);
-	strokeWeight(2);
-	ellipse(mapX(x), mapY(y), 8, 8);
+	
+	frame.stroke(0);
+	frame.strokeWeight(2);
+	frame.ellipse(mapX(x), mapY(y), 8, 8);
 	points.push(new p5.Vector(x, y))
+	if (interpolated) {
+		interpolate();
+	}
+}
+
+function check_points() {
+	//check the location of the mouse, if it hoovers over a point it displays the coordinates. 
+	//if dragged_point >= 0, it moves the indicated point to the mouse location. 
+
+	mouse = new p5.Vector(mouseX, mouseY);
+	for (var i = 0; i<points.length; i++) {
+		if (i == dragged_point) {
+			points[i].x = map(mouseX, 0, width, -range.value(), range.value());
+			points[i].y = map(mouseY, height, 0, -range.value(), range.value());
+			interpolate();
+		}
+			mapped_point = new p5.Vector(mapX(points[i].x), mapY(points[i].y));
+			if (mouse.dist(mapped_point) < 8) {
+				var x = int(points[i].x * 100)/100;
+				var y = int(points[i].y * 100)/100;
+				message = '['+ x + ' , ' + y +']';
+				text(message, mapped_point.x + 10, mapped_point.y);
+			}
+	}
 }
 
 function interpolate() {
 //function that fits a polynomial to a data set
 	var n = points.length;
+	interpolated = true;
 
-	a = new Array(40);
+	a = new Array(40);											//creates an empty array, somehow I don't get it to work otherwise
 	for (var i = 0; i<40;i++) {
 		a[i] = 0;
 	}
 
 	matrix = [];
-	if (n > 0) {												//check whether elements have been added
+	if (n > 0) {												//function only works if n>0, otherwise there are no points to interpolate
 		for(var i = 0; i < n; i++) {
     		matrix.push(new Array(n));
   		}
+
   		matrix = populate_matrix(matrix, points, n);
   		matrix = inverse_matrix(matrix);
   		multiply_inverse(matrix, points, n);
-  		display_graph();
+  		display_function();
 
-		message = ''
 
-		for (var i = 0; i < n; i++) {
-			var coeff = int(a[i] * 100);
-			coeff /= 100;
-
-			if (i == 0) {
-				message = "f(x) = "
-				message += coeff;
-			} else if (i == 1) {
-				message += ' + ' + coeff + 'x'; 
-			} else {
-				message += ' + ' + coeff + 'x<sup>' + i + '</sup>'; 
-			}
-			
-		}
-		p.style("font-family: times; font-style: italic;");
-		p.html(message);
+		update_canvas();
 
 	}
 }
 
 function populate_matrix(matrix, data, n) {
+	//inputs the x values of all the points (data) in a vandermonde Matrix of dimensions n. 
+
 	for(var i = 0; i<n; i++) {
     	for(var j = 0; j<n; j++) {
       		matrix[i][j] = data[i].x ** j;
@@ -93,6 +160,7 @@ function populate_matrix(matrix, data, n) {
 } 
 
 function multiply_inverse(matrix, data, n) {
+	//multiplies a matrix the y-values of the data input. 
 	for(var i = 0; i<n; i++) {
     	for(var j = 0; j<n; j++) { 
     		a[i] += matrix[i][j] * data[j].y;
@@ -101,41 +169,90 @@ function multiply_inverse(matrix, data, n) {
 }
 
 function compute(x) {
+	//evaluates a polynomial at point x
 	terms = points.length;
 	sum = 0;
 	for (var i = 0; i <= terms; i++) {
 		sum += a[i] * x**i;
 	}
-	print(sum);
 	return sum
 }
 
 function update_canvas() {
-	background(250);
+	//updates the frame, usually after re-evaluating the polynomial
+	frame.background(255);
 	drawAxes();
 	display_graph();
 	display_points();
 }
 
 function display_graph() {
-	stroke(0);
-	strokeWeight(2);
+	frame.stroke(0);
+	frame.strokeWeight(2);
+	increment = range.value()/300
 
-	for(var i = -range.value(); i < range.value(); i = i+0.01) {
-		point(mapX(i), mapY(compute(i)));
+	for(var i = -range.value() + increment; i < range.value(); i = i+increment) {
+		
+		frame.line(mapX(i), mapY(compute(i)), mapX(i - increment), mapY(compute(i - increment)));
 	}
 }
 
 function display_points() {
-	stroke(0);
-	strokeWeight(2);
+	frame.stroke(0);
+	frame.strokeWeight(2);
 	for (var i = 0; i < points.length; i++) {
-		ellipse(mapX(points[i].x), mapY(points[i].y), 8, 8);
+		frame.ellipse(mapX(points[i].x), mapY(points[i].y), 8, 8);
 	}
 }
 
+function display_function() {
+
+		message = ''											//create an empty string to display the function
+
+		for (var i = 0; i < n; i++) {							//trim the float values to two decimals
+			
+			var exponent = ''
+			var coeff = 0;
+			var sign = ''
+
+			if (abs(a[i]) < 0.1 && a[i] != 0) {					//if the value is small, display as exponent
+				minus_exponent = 1;
+				while (abs(a[i] * (10**minus_exponent)) < 1) {
+					minus_exponent ++;
+				}
+				coeff = (a[i]*10**(minus_exponent));
+				exponent = '*10<sup>-' + (minus_exponent-1) + '</sup>'
+				coeff = Math.round(coeff)/10;
+			} else {
+				coeff = Math.round(a[i]*10)/10;
+			}
+
+			if (coeff > 0) {
+				sign = ' + '
+			} else {
+				sign = ' - '
+			}
+
+			coeff = abs(coeff);
+
+			if (i == 0) {										
+				message = "f(x) = "
+				if (sign == ' - ') {
+					message += '-'
+				}
+				message += coeff + exponent;
+			} else if (i == 1) {
+				message += sign + coeff + exponent + 'x'; 
+			} else {
+				message += sign + coeff + exponent + 'x<sup>' + i + '</sup>'; 
+			}
+		}
+		p.style("font-family: times; font-style: italic;");
+		p.html(message);
+}
 
 function mapX(x) {
+	//helper function to map X and Y coordinates from the range to the canvas width.
 	var value = map(x, -range.value(), range.value(), 0, width);
 	return value;
 }
@@ -146,23 +263,33 @@ function mapY(y) {
 }
 
 function drawAxes(){
+	//draws the coordinate axes onto the frame
+	
+	frame.strokeWeight(1);
+	frame.stroke(255 - ((10 -range.value())*2));
+
 	var increment = width/range.value();
-	stroke(230);
 
-
-	for (var i = 0; i < width/2; i = i + increment) {
-		line(width/2 +i, 0, width/2 +i, height);
-		line(width/2 -i, 0, width/2 -i, height);
-		line(0, height/2 +i, width, height/2 +i);
-		line(0, height/2 -i, width, height/2 -i);
+	for (var i = 0; i < width/2; i = i + increment/8) {
+		frame.line(width/2 +i, 0, width/2 +i, height);
+		frame.line(width/2 -i, 0, width/2 -i, height);
+		frame.line(0, height/2 +i, width, height/2 +i);
+		frame.line(0, height/2 -i, width, height/2 -i);
 	}
 
-	strokeWeight(1);
-	stroke(50);
-	line(0, height/2, width, height/2);
-	line(width/2, 0, width/2, height);
+	frame.stroke(200);
 
-	
+	for (var i = 0; i < width/2; i = i + increment/2) {
+		frame.line(width/2 +i, 0, width/2 +i, height);
+		frame.line(width/2 -i, 0, width/2 -i, height);
+		frame.line(0, height/2 +i, width, height/2 +i);
+		frame.line(0, height/2 -i, width, height/2 -i);
+	}
+
+	frame.strokeWeight(1);											//x and y axes			
+	frame.stroke(50);
+	frame.line(0, height/2, width, height/2);
+	frame.line(width/2, 0, width/2, height);
 
 
 }
@@ -260,10 +387,17 @@ function create_identity_matrix(n) {
 }
 
 function initialize() {
+	//initialize frame and canvas
+
 	points = [];
-	background(250);
+	interpolated = false;
+	
+	frame.background(255);
 	drawAxes();
 	p.html('')
+						//styling of the hoover text;
+	noStroke();
+	fill(0);
 }
 
 
