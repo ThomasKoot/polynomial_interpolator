@@ -15,10 +15,10 @@ function setup() {
 	//The real canvas only displays the text when you hoover over the points. This is done to prevent the computer from performing
 	//all the calculations continously at framerate. 
 
-	generate = createButton("generate");		
+	generate = createButton("GENERATE");		
 	range = createSlider(1, 10, 1, 0);			
 	canvas = createCanvas(500, 500);
-	reset = createButton('reset');
+	reset = createButton('RESET');
 	reset.parent('reset-div')
 	canvas.parent('sketch-div');
   	p = createP("");							
